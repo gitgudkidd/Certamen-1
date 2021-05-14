@@ -1,5 +1,4 @@
 
-
 tinymce.init({
     selector: '#descripcion-txt',
     height: 150,
@@ -14,106 +13,117 @@ tinymce.init({
     'alignright alignjustify | bullist numlist outdent indent | ' +
     'removeformat | help',
     content_style: 'body { font-family:Helvetica,Arial,sans-serif; font-size:14px }'
-  });
-  
-  const cargarTabla = ()=>{
+});
+
+let menu = []
+
+document.querySelector("#registrar-btn").addEventListener("click", ()=>{
     
-    //1-Obtener una referencia a la tabla
-    let tbody = document.querySelector("#tabla-tbody");
-    
-    //Eliminar todos los elementos que tenga el tbody
-    tbody.innerHTML =""
-
-    //2-Recorrer la lista
-    for(let i=0; i < pokemones.length; ++i){
-      let p = pokemones[i];
-      
-      //3-Por cada pokemon generar una fila (tr)
-      let tr = document.createElement("tr")
-      
-      //4-Por cada atributo, generar celdas (td)
-      let tdNRO = document.createElement("td");
-      tdNRO.innerText = (i+1)
-      let tdNombre = document.createElement("td");
-      if(p.legendario){
-        tdNombre.classList.add("text-warning");
-
-      }
-      tdNombre.innerText = p.nombre;
-      let tdTipo = document.createElement("td");
-      
-      let icono = document.createElement("i");
-      if(p.tipo == "fuego"){
-        //<i class="fas fa-fire"></i>
-        //Agregar clases a un elemento
-        icono.classList.add("fas","fa-fire","text-danger","fa-3x")
-      }else if(p.tipo == "planta"){
-        //<i class="fas fa-leaf"></i>
-        icono.classList.add("fas","fa-leaf","text-success","fa-3x")
-      }else if(p.tipo == "electrico"){
-        //<i class="fas fa-bolt"></i>
-        icono.classList.add("fas","fa-bolt","text-warning","fa-3x")
-      }else if(p.tipo == "agua"){
-        //<i class="fas fa-tint"></i>
-        icono.classList.add("fas","fa-tint","text-primary","fa-3x")
-      }else if(p.tipo == "normal"){
-        //<i class="fas fa-star"></i>
-        icono.classList.add("fas","fa-star","text-info","fa-3x")
-      }
-      tdTipo.classList.add("text-center");
-      tdTipo.appendChild(icono);
-      
-      let tdDescripcion = document.createElement("td");
-      tdDescripcion.innerHTML = p.descripcion;
-      let tdAcciones = document.createElement("td");
-      tdAcciones.classList.add("text-center");
-      //Agregar un boton al td de acciones
-      let boton = document.createElement("button");//crear elementos
-      boton.classList.add("btn","btn-danger");//cambiar clases de los elementos
-      boton.innerText = "Enviar al profeson oak";//cambiar texto de un elemento
-      boton.nro = i;
-      boton.addEventListener("click",eliminarpokemon);
-      tdAcciones.appendChild(boton); // agregar un elemento dentro de otro
-
-      //5-Agregar las celdas al tr
-      tr.appendChild(tdNRO);
-      tr.appendChild(tdNombre);
-      tr.appendChild(tdTipo);
-      tr.appendChild(tdDescripcion);
-      tr.appendChild(tdAcciones);
-      
-      //6-Agregar el tr a la tabla
-      tbody.appendChild(tr);
-    }
-
-  };
-  
-  document.querySelector("#registrar-btn").addEventListener("click", () =>{
-    //value es para obtener el valor de los input de texto
     let nombre = document.querySelector("#nombre-txt").value;
-    //esto lo saque de la pagina de tinymce, es para obtener lo escrito
+    if(nombre.length == 0 ){
+        Swal.fire('Error','No se registro ningun dato','error')
+        return
+    }
+    let horario = document.querySelector("#horario-select");
+    let valor = document.querySelector("#valor-num").value;
     let descripcion = tinymce.get("descripcion-txt").getContent();
-    //checked indica si el radiobutton esta seleccionado
-    let legendario = document.querySelector("#legendario-si").checked;
-    //el tipo se obtiene igual que los input
-    let tipo = document.querySelector("#tipo-select").value;
+    let oferta = Oferta(horario,valor);
+    let validacion = validarValor(horario,valor);
+    if (validacion == true){
+        const pedido = {};
+        pedido.nombre = nombre;
+        if (horario.value == 0){
+            pedido.horario = "Desayuno";
+        }else if(horario.value == 1){
+            pedido.horario = "Almuerzo";
+        }else if (horario.value == 2){
+            pedido.horario = "Once";
+        }else{
+            pedido.horario = "Cena";
+        }
+        pedido.valor = valor;
+        pedido.descripcion = descripcion;
+        pedido.oferta = oferta;
+        menu.push(pedido);
+        cargarTabla();
+        Swal.fire('¡Bien!','Se agrego correctamente el menu','success');
+    }else{
+        Swal.fire('Error','No se ingreso el precio en los rangos de valores','error')
+    }
+});
 
-    //Como crear un objeto
-    let pokemon = {};
-    pokemon.nombre = nombre;
-    pokemon.descripcion = descripcion;
-    pokemon.legendario = legendario;
-    pokemon.tipo = tipo;
+const agregarSelect = (i) =>{
+    let selec = document.querySelector("#horario-select");
+    let opcion = document.createElement("opcion");
+    opcion.value = i;
+    opcion.text = opcionSelect[i]
+    selec.appendChild(opcion)
+};
 
-    //Como guardar en una lista de elementos
-    pokemones.push(pokemon); // append
-    cargarTabla();
-    Swal.fire("Registro de Menu realizado","success");
-} );
+const opcionSelect = ["Desayuno","Almuerzo","Once","Cena"];
+for (let i = 0 ; i < opcionSelect.length ; ++i){
+    agregarSelect(i);
+}
 
-document.querySelector("#limpiar-btn").addEventListener("click",()=>{
-    document.querySelector("#nombre-txt").value="";
-    tinymce.get("descripcion-txt").setContent("");
-    document.querySelector("#tipo-select").value = "desayuno";
-  });
-  
+
+const validarValor = (horario,valor) =>{
+    let validacion = true;
+    if (horario.value == 0 && (valor < 1000 || valor > 10000)){
+        validacion = false;
+    }if (horario.value == 1 && (valor < 10000 || valor > 20000)){ 
+        validacion = false;
+    }if (horario.value == 2 && (valor < 5000 || valor>15000)){
+        validacion = false;
+    }if (horario.value == 3 && valor < 15000){ 
+        validacion = false;
+    }
+    console.log(validacion)
+    return validacion;
+};
+
+const Oferta = (horario,valor) =>{
+    let oferta = false;
+    if (horario.value == 0 && valor < 5000){
+        oferta = true;
+    }else if (horario.value == 1 && valor < 15000){
+        oferta = true;
+    }else if (horario.value == 2 && valor < 10000){
+        oferta = true;
+    }else if (horario.value == 3 && valor < 20000){ 
+        oferta = true;
+    }
+    return oferta
+};
+
+const cargarTabla = () =>{
+    tbody = document.querySelector("#menus");
+    tbody.innerHTML = "";
+    for(let i=0; i<menu.length; ++i){
+        
+        let p = menu[i]
+        let tr = document.createElement("tr");
+
+        let tdNombre = document.createElement("td");
+        tdNombre.innerText = p.nombre;
+        let tdHorario = document.createElement("td");
+        tdHorario.innerText = p.horario;
+        let tdValor= document.createElement("td");
+        tdValor.innerText = p.valor;
+        let tdDescripcion = document.createElement("td");
+        tdDescripcion.innerHTML = p.descripcion;
+        let tdOferta = document.createElement("td");
+        let icono = document.createElement("i");
+        if (p.oferta){
+            icono.classList.add("fas","fcomment-dollar","fa-3x"); 
+        }else{
+            icono.classList.add("fas","fa-comment-slash","fa-3x");
+        };
+        tdOferta.appendChild(icono)
+        tr.appendChild(tdNombre)
+        tr.appendChild(tdHorario);
+        tr.appendChild(tdValor);
+        tr.appendChild(tdDescripcion);
+        tr.appendChild(tdOferta );
+        tbody.appendChild(tr);
+    }
+};
